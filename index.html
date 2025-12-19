@@ -21,60 +21,73 @@ body {
 .app {
     width: 100%;
     max-width: 500px;
-    background: white;
-    border-radius: 14px;
-    padding: 28px;
-    box-shadow: 0 25px 40px rgba(0,0,0,0.25);
+    background: #fdfdfd;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
 }
 
 h1 {
     text-align: center;
-    margin: 0 0 20px;
+    margin: 0 0 24px;
     font-weight: 700;
+    color: #333;
 }
 
 .input-row {
     display: flex;
-    gap: 10px;
-    margin-bottom: 14px;
+    gap: 12px;
+    margin-bottom: 16px;
 }
 
 input[type="text"] {
     flex: 1;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 10px;
     border: 1px solid #ddd;
     font-size: 15px;
+    transition: border 0.2s, box-shadow 0.2s;
+}
+
+input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
 }
 
 button {
     border: none;
-    border-radius: 8px;
-    padding: 10px 14px;
+    border-radius: 10px;
+    padding: 10px 16px;
     cursor: pointer;
     font-size: 14px;
+    transition: all 0.2s ease;
 }
 
 .add-btn {
     background: #667eea;
     color: white;
+    box-shadow: 0 6px 14px rgba(102,126,234,0.4);
 }
 
 .add-btn:hover {
     background: #5a6fdc;
+    transform: translateY(-1px);
 }
 
 .filters {
     display: flex;
     justify-content: center;
-    gap: 8px;
-    margin-bottom: 14px;
+    gap: 10px;
+    margin-bottom: 16px;
 }
 
 .filter-btn {
     background: #f1f1f1;
     color: #333;
-    padding: 6px 12px;
+    padding: 6px 14px;
+    border-radius: 8px;
 }
 
 .filter-btn.active {
@@ -92,24 +105,37 @@ li {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px;
-    border-bottom: 1px solid #eee;
+    padding: 14px 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
     cursor: grab;
-    background: white;
+    background: #e0f2fe; /* active task bg */
+    transition: background 0.2s, transform 0.2s;
+}
+
+li.completed {
+    background: #f3f4f6; /* muted completed bg */
 }
 
 li.dragging {
     opacity: 0.5;
+    transform: scale(0.98);
+}
+
+li span {
+    flex: 1;
+    margin-left: 8px;
+    font-size: 15px;
+    color: #111;
 }
 
 li.completed span {
     text-decoration: line-through;
-    color: #999;
+    color: #777;
 }
 
-span {
-    flex: 1;
-    margin-left: 8px;
+li:hover {
+    transform: translateY(-2px);
 }
 
 .delete-btn {
@@ -117,16 +143,20 @@ span {
     color: white;
     font-size: 12px;
     padding: 6px 10px;
+    border-radius: 8px;
+    transition: all 0.2s;
 }
 
 .delete-btn:hover {
     background: #dc2626;
+    transform: translateY(-1px);
 }
 
 .empty {
     text-align: center;
     margin-top: 20px;
     color: #888;
+    font-style: italic;
 }
 
 footer {
@@ -187,9 +217,10 @@ function renderTasks() {
     const empty = document.getElementById("emptyState");
     list.innerHTML = "";
 
+    // FILTER
     let tasks = allTasks;
-    if (currentFilter === "active") tasks = tasks.filter(t => !t.completed);
-    if (currentFilter === "completed") tasks = tasks.filter(t => t.completed);
+    if (currentFilter === "active") tasks = tasks.filter(t => t.completed === false);
+    if (currentFilter === "completed") tasks = tasks.filter(t => t.completed === true);
 
     if (tasks.length === 0) {
         empty.style.display = "block";
@@ -219,7 +250,7 @@ function renderTasks() {
             else list.insertBefore(draggedItem, after);
         });
 
-        // Checkbox to mark completed
+        // Checkbox
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = task.completed;
@@ -266,7 +297,7 @@ async function saveOrder() {
     loadTasks();
 }
 
-// CRUD FUNCTIONS
+// CRUD
 async function addTask() {
     const input = document.getElementById("taskInput");
     if (!input.value.trim()) return;
