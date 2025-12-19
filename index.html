@@ -3,32 +3,46 @@
 <head>
 <meta charset="UTF-8" />
 
-<!-- ✅ Disable favicon request -->
+<!-- Disable favicon request -->
 <link rel="icon" href="data:,">
 
-<title>Serverless To-Do App</title>
+<title>Serverless Task Manager</title>
 
 <style>
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        background: #f5f7fa;
-        margin: 0;
-        padding: 0;
+    * {
+        box-sizing: border-box;
     }
 
-    .container {
-        max-width: 520px;
-        margin: 60px auto;
-        background: white;
-        padding: 24px;
-        border-radius: 10px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .app {
+        width: 100%;
+        max-width: 480px;
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 28px;
+        box-shadow: 0 25px 40px rgba(0,0,0,0.25);
+        animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     h1 {
         text-align: center;
-        margin-bottom: 20px;
-        color: #333;
+        margin: 0 0 24px;
+        font-weight: 700;
+        color: #2d2d2d;
     }
 
     .input-row {
@@ -39,27 +53,40 @@
 
     input {
         flex: 1;
-        padding: 10px;
+        padding: 12px;
         font-size: 15px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        transition: border 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 2px rgba(102,126,234,0.15);
     }
 
     button {
-        padding: 10px 14px;
-        border-radius: 6px;
         border: none;
+        border-radius: 8px;
         font-size: 14px;
         cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+    }
+
+    button:active {
+        transform: scale(0.96);
     }
 
     .add-btn {
-        background-color: #2563eb;
+        background: #667eea;
         color: white;
+        padding: 12px 16px;
+        box-shadow: 0 6px 14px rgba(102,126,234,0.4);
     }
 
     .add-btn:hover {
-        background-color: #1e4fd8;
+        background: #5a6fdc;
     }
 
     ul {
@@ -72,63 +99,78 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid #eee;
+        padding: 14px 0;
+        border-bottom: 1px solid #f0f0f0;
+        animation: slideIn 0.3s ease;
     }
 
-    li:last-child {
-        border-bottom: none;
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(-10px); }
+        to { opacity: 1; transform: translateX(0); }
     }
 
     li span {
-        cursor: pointer;
         flex: 1;
+        cursor: pointer;
+        font-size: 15px;
         color: #333;
     }
 
     li.completed span {
         text-decoration: line-through;
-        color: #888;
+        color: #aaa;
     }
 
     .delete-btn {
-        background-color: #ef4444;
+        background: #ef4444;
         color: white;
         padding: 6px 10px;
         font-size: 12px;
+        box-shadow: 0 4px 10px rgba(239,68,68,0.4);
     }
 
     .delete-btn:hover {
-        background-color: #dc2626;
+        background: #dc2626;
     }
 
     .empty {
         text-align: center;
         color: #888;
-        margin-top: 10px;
+        margin-top: 20px;
+        font-size: 14px;
+    }
+
+    footer {
+        text-align: center;
+        margin-top: 18px;
+        font-size: 12px;
+        color: #999;
     }
 </style>
 </head>
 
 <body>
-<div class="container">
-    <h1>📝 Serverless To-Do</h1>
+<div class="app">
+    <h1>🚀 Serverless Tasks</h1>
 
     <div class="input-row">
-        <input id="taskInput" placeholder="What do you need to do?" />
+        <input id="taskInput" placeholder="Add a new task..." />
         <button class="add-btn" onclick="addTask()">Add</button>
     </div>
 
     <ul id="taskList"></ul>
     <div id="emptyState" class="empty" style="display:none;">
-        No tasks yet 🎉
+        You're all caught up ✨
     </div>
+
+    <footer>
+        Powered by AWS Lambda & DynamoDB
+    </footer>
 </div>
 
 <script>
 const API_URL = "https://7jgwzjme1f.execute-api.us-east-1.amazonaws.com/prod/tasks";
 
-/* Load tasks */
 async function loadTasks() {
     const res = await fetch(API_URL);
     const tasks = await res.json();
@@ -164,7 +206,6 @@ async function loadTasks() {
     });
 }
 
-/* Add task */
 async function addTask() {
     const input = document.getElementById("taskInput");
     const title = input.value.trim();
@@ -180,7 +221,6 @@ async function addTask() {
     loadTasks();
 }
 
-/* Delete task */
 async function deleteTask(taskId) {
     await fetch(`${API_URL}?taskId=${taskId}`, {
         method: "DELETE"
@@ -188,13 +228,12 @@ async function deleteTask(taskId) {
     loadTasks();
 }
 
-/* Toggle completed */
 async function toggleTask(taskId, completed) {
     await fetch(API_URL, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            taskId: taskId,
+            taskId,
             completed: !completed
         })
     });
