@@ -110,7 +110,7 @@ li {
     margin-bottom: 10px;
     cursor: grab;
     background: #e0f2fe;
-    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 li.completed {
@@ -295,13 +295,14 @@ function getDragAfterElement(container, y) {
 // SAVE ORDER
 async function saveOrder() {
     const items = [...document.querySelectorAll("li")];
-    for (let i = 0; i < items.length; i++) {
-        const payload = { taskId: items[i].dataset.id, updates: { order: i } };
+    const updatedOrder = items.map((li, i) => ({ taskId: li.dataset.id, updates: { order: i } }));
+
+    for (const item of updatedOrder) {
         try {
             await fetch(API_URL, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(item)
             });
         } catch (err) {
             console.error("Error saving order:", err);
