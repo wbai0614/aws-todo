@@ -90,12 +90,6 @@ Drag, reorder, add, complete, and delete tasks with a smooth, responsive UI.
 
 ---
 
-## Screenshots
-
-![Tasks App Screenshot](./screenshot.png)
-
----
-
 ## License
 
 MIT License
