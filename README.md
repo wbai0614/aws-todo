@@ -5,7 +5,7 @@ Drag, reorder, add, complete, and delete tasks with a smooth, responsive UI.
 
 ## Live Demo
 
-[Access the app here](http://todo-app-12345.s3-website-us-east-1.amazonaws.com/)
+[Access the app here](dz6cx3cobt6px.cloudfront.net)
 
 ---
 
