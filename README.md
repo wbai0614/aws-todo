@@ -5,7 +5,7 @@ Drag, reorder, add, complete, and delete tasks with a smooth, responsive UI.
 
 ## Live Demo
 
-[Access the app here](dz6cx3cobt6px.cloudfront.net)
+[Access the app here](https://dz6cx3cobt6px.cloudfront.net)
 
 ---
 
