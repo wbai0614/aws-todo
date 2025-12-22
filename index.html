@@ -109,17 +109,18 @@ li {
     border-radius: 10px;
     margin-bottom: 10px;
     cursor: grab;
-    background: #e0f2fe; /* active task bg */
-    transition: background 0.2s, transform 0.2s;
+    background: #e0f2fe;
+    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 li.completed {
-    background: #f3f4f6; /* muted completed bg */
+    background: #f3f4f6;
 }
 
 li.dragging {
     opacity: 0.5;
     transform: scale(0.98);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.2);
 }
 
 li span {
@@ -195,7 +196,7 @@ let allTasks = [];
 let currentFilter = "all";
 let draggedItem = null;
 
-// FILTER LOGIC
+// FILTER
 function setFilter(filter) {
     currentFilter = filter;
     document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
@@ -205,10 +206,15 @@ function setFilter(filter) {
 
 // LOAD TASKS
 async function loadTasks() {
-    const res = await fetch(API_URL);
-    allTasks = await res.json();
-    allTasks.sort((a,b) => (a.order ?? 0) - (b.order ?? 0));
-    renderTasks();
+    try {
+        const res = await fetch(API_URL);
+        allTasks = await res.json();
+        if (!Array.isArray(allTasks)) allTasks = [];
+        allTasks.sort((a,b) => (a.order ?? 0) - (b.order ?? 0));
+        renderTasks();
+    } catch (err) {
+        console.error("Error loading tasks:", err);
+    }
 }
 
 // RENDER TASKS
@@ -217,10 +223,9 @@ function renderTasks() {
     const empty = document.getElementById("emptyState");
     list.innerHTML = "";
 
-    // FILTER
     let tasks = allTasks;
-    if (currentFilter === "active") tasks = tasks.filter(t => t.completed === false);
-    if (currentFilter === "completed") tasks = tasks.filter(t => t.completed === true);
+    if (currentFilter === "active") tasks = tasks.filter(t => !t.completed);
+    if (currentFilter === "completed") tasks = tasks.filter(t => t.completed);
 
     if (tasks.length === 0) {
         empty.style.display = "block";
@@ -234,27 +239,28 @@ function renderTasks() {
         li.dataset.id = task.taskId;
         if (task.completed) li.classList.add("completed");
 
-        // Drag events
+        // DRAG EVENTS
         li.addEventListener("dragstart", () => {
             draggedItem = li;
             li.classList.add("dragging");
         });
         li.addEventListener("dragend", () => {
             li.classList.remove("dragging");
+            draggedItem = null;
             saveOrder();
         });
         li.addEventListener("dragover", e => {
             e.preventDefault();
             const after = getDragAfterElement(list, e.clientY);
-            if (after == null) list.appendChild(draggedItem);
+            if (!after) list.appendChild(draggedItem);
             else list.insertBefore(draggedItem, after);
         });
 
-        // Checkbox
+        // CHECKBOX
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = task.completed;
-        checkbox.addEventListener("change", () => toggleTask(task.taskId, task.completed));
+        checkbox.addEventListener("change", () => toggleTask(task.taskId, !task.completed));
 
         const span = document.createElement("span");
         span.textContent = task.title;
@@ -271,28 +277,35 @@ function renderTasks() {
     });
 }
 
-// DRAG HELPERS
+// DRAG HELPER
 function getDragAfterElement(container, y) {
-    const items = [...container.querySelectorAll("li:not(.dragging)")];
-    return items.reduce((closest, child) => {
+    const draggableElements = [...container.querySelectorAll("li:not(.dragging)")];
+    let closest = { offset: Number.NEGATIVE_INFINITY, element: null };
+    draggableElements.forEach(child => {
         const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        return offset < 0 && offset > closest.offset ? { offset, element: child } : closest;
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
+        const offset = y - (box.top + box.height / 2);
+        if (offset < 0 && offset > closest.offset) {
+            closest.offset = offset;
+            closest.element = child;
+        }
+    });
+    return closest.element;
 }
 
 // SAVE ORDER
 async function saveOrder() {
     const items = [...document.querySelectorAll("li")];
     for (let i = 0; i < items.length; i++) {
-        await fetch(API_URL, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                taskId: items[i].dataset.id,
-                order: i
-            })
-        });
+        const payload = { taskId: items[i].dataset.id, updates: { order: i } };
+        try {
+            await fetch(API_URL, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+        } catch (err) {
+            console.error("Error saving order:", err);
+        }
     }
     loadTasks();
 }
@@ -314,14 +327,15 @@ async function addTask() {
 
 async function deleteTask(id) {
     await fetch(`${API_URL}?taskId=${id}`, { method: "DELETE" });
-    loadTasks();
+    allTasks = allTasks.filter(t => t.taskId !== id);
+    renderTasks();
 }
 
 async function toggleTask(id, completed) {
     await fetch(API_URL, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taskId: id, completed: !completed })
+        body: JSON.stringify({ taskId: id, updates: { completed } })
     });
     loadTasks();
 }
